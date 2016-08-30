@@ -55,7 +55,7 @@ slot_has_valid_firmware(int fd, int slot)
 	int				has_fw = false;
 
 	read_logpage(fd, NVME_LOG_FIRMWARE_SLOT,
-	    NVME_GLOBAL_NAMESPACE_TAG, &fw, sizeof(fw));
+	    NVME_GLOBAL_NS_TAG, &fw, sizeof(fw));
 
 	if (fw.revision[slot-1] != 0LLU)
 		has_fw = true;
@@ -147,7 +147,7 @@ activate_firmware(int fd, int slot, int activate_action)
 	struct nvme_pt_command	pt;
 
 	memset(&pt, 0, sizeof(pt));
-	pt.cmd.opc = NVME_OPC_FIRMWARE_ACTIVATE;
+	pt.cmd.opc = NVME_OPC_FIRMWARE_COMMIT;
 	pt.cmd.cdw10 = (activate_action << 3) | slot;
 	pt.is_read = 0;
 

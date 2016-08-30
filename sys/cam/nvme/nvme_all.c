@@ -117,7 +117,7 @@ nvme_cmd_string(const struct nvme_command *cmd, char *cmd_string, size_t len)
 	snprintf(cmd_string, len,
 	    "opc=%x fuse=%x nsid=%x prp1=%llx prp2=%llx cdw=%x %x %x %x %x %x",
 	    cmd->opc, cmd->fuse, cmd->nsid,
-	    (unsigned long long)cmd->prp1, (unsigned long long)cmd->prp2,
+	    (unsigned long long)cmd->dptr.prp.prp1, (unsigned long long)cmd->dptr.prp.prp2,
 	    cmd->cdw10, cmd->cdw11, cmd->cdw12, cmd->cdw13, cmd->cdw14, cmd->cdw15);
 
 	return cmd_string;

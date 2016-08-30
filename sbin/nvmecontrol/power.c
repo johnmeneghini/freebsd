@@ -83,7 +83,7 @@ power_list(struct nvme_controller_data *cdata)
 	printf(" #   Max pwr  Enter Lat  Exit Lat RT RL WT WL Idle Pwr  Act Pwr Workloadd\n");
 	printf("--  --------  --------- --------- -- -- -- -- -------- -------- --\n");
 	for (i = 0; i <= cdata->npss; i++)
-		power_list_one(i, &cdata->power_state[i]);
+		power_list_one(i, &cdata->psd[i]);
 }
 
 static void

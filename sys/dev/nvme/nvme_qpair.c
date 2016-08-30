@@ -55,7 +55,7 @@ static struct nvme_opcode_string admin_opcode[] = {
 	{ NVME_OPC_SET_FEATURES, "SET FEATURES" },
 	{ NVME_OPC_GET_FEATURES, "GET FEATURES" },
 	{ NVME_OPC_ASYNC_EVENT_REQUEST, "ASYNC EVENT REQUEST" },
-	{ NVME_OPC_FIRMWARE_ACTIVATE, "FIRMWARE ACTIVATE" },
+	{ NVME_OPC_FIRMWARE_COMMIT, "FIRMWARE ACTIVATE" },
 	{ NVME_OPC_FIRMWARE_IMAGE_DOWNLOAD, "FIRMWARE IMAGE DOWNLOAD" },
 	{ NVME_OPC_FORMAT_NVM, "FORMAT NVM" },
 	{ NVME_OPC_SECURITY_SEND, "SECURITY SEND" },
@@ -683,7 +683,7 @@ nvme_timeout(void *arg)
 	struct nvme_tracker	*tr = arg;
 	struct nvme_qpair	*qpair = tr->qpair;
 	struct nvme_controller	*ctrlr = qpair->ctrlr;
-	union csts_register	csts;
+	union nvme_csts_register	csts;
 
 	/* Read csts to get value of cfs - controller fatal status. */
 	csts.raw = nvme_mmio_read_4(ctrlr, csts);
@@ -757,13 +757,13 @@ nvme_payload_map(void *arg, bus_dma_segment_t *seg, int nseg, int error)
 	 *  we can safely just transfer each segment to its
 	 *  associated PRP entry.
 	 */
-	tr->req->cmd.prp1 = seg[0].ds_addr;
+	tr->req->cmd.dptr.prp.prp1 = seg[0].ds_addr;
 
 	if (nseg == 2) {
-		tr->req->cmd.prp2 = seg[1].ds_addr;
+		tr->req->cmd.dptr.prp.prp2 = seg[1].ds_addr;
 	} else if (nseg > 2) {
 		cur_nseg = 1;
-		tr->req->cmd.prp2 = (uint64_t)tr->prp_bus_addr;
+		tr->req->cmd.dptr.prp.prp2 = (uint64_t)tr->prp_bus_addr;
 		while (cur_nseg < nseg) {
 			tr->prp[cur_nseg-1] =
 			    (uint64_t)seg[cur_nseg].ds_addr;
@@ -775,7 +775,7 @@ nvme_payload_map(void *arg, bus_dma_segment_t *seg, int nseg, int error)
 		 *  since there is only one segment, but set
 		 *  to 0 just to be safe.
 		 */
-		tr->req->cmd.prp2 = 0;
+		tr->req->cmd.dptr.prp.prp2 = 0;
 	}
 
 	nvme_qpair_submit_tracker(tr->qpair, tr);

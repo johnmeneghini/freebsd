@@ -329,6 +329,10 @@ struct nvme_controller {
 	bus_space_read_4((sc)->bus_tag, (sc)->bus_handle,		       \
 	    nvme_mmio_offsetof(reg))
 
+#define nvme_mmio_read_8(sc, reg)                                              \
+        bus_space_read_8((sc)->bus_tag, (sc)->bus_handle,                      \
+            nvme_mmio_offsetof(reg))
+
 #define nvme_mmio_write_4(sc, reg, val)					       \
 	bus_space_write_4((sc)->bus_tag, (sc)->bus_handle,		       \
 	    nvme_mmio_offsetof(reg), val)

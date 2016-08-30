@@ -27,8 +27,6 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_cam.h"
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
@@ -119,7 +117,7 @@ static int
 nvme_ctrlr_construct_io_qpairs(struct nvme_controller *ctrlr)
 {
 	struct nvme_qpair	*qpair;
-	union cap_lo_register	cap_lo;
+	union nvme_cap_register	cap;
 	int			i, error, num_entries, num_trackers;
 
 	num_entries = NVME_IO_ENTRIES;
@@ -130,8 +128,8 @@ nvme_ctrlr_construct_io_qpairs(struct nvme_controller *ctrlr)
 	 *  devices may specify a smaller limit, so we need to check
 	 *  the MQES field in the capabilities register.
 	 */
-	cap_lo.raw = nvme_mmio_read_4(ctrlr, cap_lo);
-	num_entries = min(num_entries, cap_lo.bits.mqes+1);
+	cap.raw = nvme_mmio_read_8(ctrlr, cap);
+	num_entries = min(num_entries, cap.bits.mqes+1);
 
 	num_trackers = NVME_IO_TRACKERS;
 	TUNABLE_INT_FETCH("hw.nvme.io_trackers", &num_trackers);
@@ -229,8 +227,8 @@ static int
 nvme_ctrlr_wait_for_ready(struct nvme_controller *ctrlr, int desired_val)
 {
 	int ms_waited;
-	union cc_register cc;
-	union csts_register csts;
+	union nvme_cc_register cc;
+	union nvme_csts_register csts;
 
 	cc.raw = nvme_mmio_read_4(ctrlr, cc);
 	csts.raw = nvme_mmio_read_4(ctrlr, csts);
@@ -259,8 +257,8 @@ nvme_ctrlr_wait_for_ready(struct nvme_controller *ctrlr, int desired_val)
 static void
 nvme_ctrlr_disable(struct nvme_controller *ctrlr)
 {
-	union cc_register cc;
-	union csts_register csts;
+	union nvme_cc_register cc;
+	union nvme_csts_register csts;
 
 	cc.raw = nvme_mmio_read_4(ctrlr, cc);
 	csts.raw = nvme_mmio_read_4(ctrlr, csts);
@@ -277,9 +275,9 @@ nvme_ctrlr_disable(struct nvme_controller *ctrlr)
 static int
 nvme_ctrlr_enable(struct nvme_controller *ctrlr)
 {
-	union cc_register	cc;
-	union csts_register	csts;
-	union aqa_register	aqa;
+	union nvme_cc_register	cc;
+	union nvme_csts_register	csts;
+	union nvme_aqa_register	aqa;
 
 	cc.raw = nvme_mmio_read_4(ctrlr, cc);
 	csts.raw = nvme_mmio_read_4(ctrlr, csts);
@@ -610,7 +608,7 @@ nvme_ctrlr_async_event_cb(void *arg, const struct nvme_completion *cpl)
 		    aer->log_page_id);
 		memcpy(&aer->cpl, cpl, sizeof(*cpl));
 		nvme_ctrlr_cmd_get_log_page(aer->ctrlr, aer->log_page_id,
-		    NVME_GLOBAL_NAMESPACE_TAG, aer->log_page_buffer,
+		    NVME_GLOBAL_NS_TAG, aer->log_page_buffer,
 		    aer->log_page_size, nvme_ctrlr_async_event_log_page_cb,
 		    aer);
 		/* Wait to notify consumers until after log page is fetched. */
@@ -1060,8 +1058,7 @@ nvme_ctrlr_setup_interrupts(struct nvme_controller *ctrlr)
 int
 nvme_ctrlr_construct(struct nvme_controller *ctrlr, device_t dev)
 {
-	union cap_lo_register	cap_lo;
-	union cap_hi_register	cap_hi;
+	union nvme_cap_register	cap;
 	int			status, timeout_period;
 
 	ctrlr->dev = dev;
@@ -1077,15 +1074,15 @@ nvme_ctrlr_construct(struct nvme_controller *ctrlr, device_t dev)
 	 * Software emulators may set the doorbell stride to something
 	 *  other than zero, but this driver is not set up to handle that.
 	 */
-	cap_hi.raw = nvme_mmio_read_4(ctrlr, cap_hi);
-	if (cap_hi.bits.dstrd != 0)
+	cap.raw = nvme_mmio_read_8(ctrlr, cap);
+	if (cap.bits.dstrd != 0)
 		return (ENXIO);
 
-	ctrlr->min_page_size = 1 << (12 + cap_hi.bits.mpsmin);
+	ctrlr->min_page_size = 1 << (12 + cap.bits.mpsmin);
 
 	/* Get ready timeout value from controller, in units of 500ms. */
-	cap_lo.raw = nvme_mmio_read_4(ctrlr, cap_lo);
-	ctrlr->ready_timeout_in_ms = cap_lo.bits.to * 500;
+	cap.raw = nvme_mmio_read_8(ctrlr, cap);
+	ctrlr->ready_timeout_in_ms = cap.bits.to * 500;
 
 	timeout_period = NVME_DEFAULT_TIMEOUT_PERIOD;
 	TUNABLE_INT_FETCH("hw.nvme.timeout_period", &timeout_period);
@@ -1184,8 +1181,8 @@ nvme_ctrlr_destruct(struct nvme_controller *ctrlr, device_t dev)
 void
 nvme_ctrlr_shutdown(struct nvme_controller *ctrlr)
 {
-	union cc_register	cc;
-	union csts_register	csts;
+	union nvme_cc_register	cc;
+	union nvme_csts_register	csts;
 	int			ticks = 0;
 
 	cc.raw = nvme_mmio_read_4(ctrlr, cc);

@@ -92,7 +92,7 @@ nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr,
 	cmd->cdw10 = ((io_que->num_entries-1) << 16) | io_que->id;
 	/* 0x3 = interrupts enabled | physically contiguous */
 	cmd->cdw11 = (vector << 16) | 0x3;
-	cmd->prp1 = io_que->cpl_bus_addr;
+	cmd->dptr.prp.prp1 = io_que->cpl_bus_addr;
 
 	nvme_ctrlr_submit_admin_request(ctrlr, req);
 }
@@ -116,7 +116,7 @@ nvme_ctrlr_cmd_create_io_sq(struct nvme_controller *ctrlr,
 	cmd->cdw10 = ((io_que->num_entries-1) << 16) | io_que->id;
 	/* 0x1 = physically contiguous */
 	cmd->cdw11 = (io_que->id << 16) | 0x1;
-	cmd->prp1 = io_que->cmd_bus_addr;
+	cmd->dptr.prp.prp1 = io_que->cmd_bus_addr;
 
 	nvme_ctrlr_submit_admin_request(ctrlr, req);
 }
@@ -284,7 +284,7 @@ nvme_ctrlr_cmd_get_error_page(struct nvme_controller *ctrlr,
 		num_entries = ctrlr->cdata.elpe + 1;
 
 	nvme_ctrlr_cmd_get_log_page(ctrlr, NVME_LOG_ERROR,
-	    NVME_GLOBAL_NAMESPACE_TAG, payload, sizeof(*payload) * num_entries,
+	    NVME_GLOBAL_NS_TAG, payload, sizeof(*payload) * num_entries,
 	    cb_fn, cb_arg);
 }
 
@@ -304,7 +304,7 @@ nvme_ctrlr_cmd_get_firmware_page(struct nvme_controller *ctrlr,
 {
 
 	nvme_ctrlr_cmd_get_log_page(ctrlr, NVME_LOG_FIRMWARE_SLOT, 
-	    NVME_GLOBAL_NAMESPACE_TAG, payload, sizeof(*payload), cb_fn,
+	    NVME_GLOBAL_NS_TAG, payload, sizeof(*payload), cb_fn,
 	    cb_arg);
 }
 

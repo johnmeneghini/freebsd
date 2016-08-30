@@ -917,7 +917,7 @@ logpage(int argc, char *argv[])
 		open_dev(cname, &fd, 1, 1);
 	} else {
 		ns_specified = false;
-		nsid = NVME_GLOBAL_NAMESPACE_TAG;
+		nsid = NVME_GLOBAL_NS_TAG;
 		open_dev(argv[optind], &fd, 1, 1);
 	}
 
