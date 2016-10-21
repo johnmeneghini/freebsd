@@ -165,9 +165,9 @@ union nvme_csts_register {
 SPDK_STATIC_ASSERT(sizeof(union nvme_csts_register) == 4, "Incorrect size");
 
 enum nvme_shst_value {
-	NVME_SHST_NORMAL		= 0x0,
+	NVME_SHST_NORMAL	= 0x0,
 	NVME_SHST_OCCURRING	= 0x1,
-	NVME_SHST_COMPLETE		= 0x2,
+	NVME_SHST_COMPLETE	= 0x2,
 };
 
 union nvme_aqa_register {
@@ -449,10 +449,26 @@ SPDK_STATIC_ASSERT(sizeof(struct nvme_completion) == 16, "Incorrect size");
  * Dataset Management range
  */
 struct nvme_dsm_range {
-	uint32_t attributes;
-	uint32_t length;
-	uint64_t starting_lba;
-} __attribute__((packed));
+        union {
+                struct {
+                        uint32_t af             : 4; /**< access frequencey */
+                        uint32_t al             : 2; /**< access latency */
+                        uint32_t reserved0      : 2;
+
+                        uint32_t sr             : 1; /**< sequential read range */
+                        uint32_t sw             : 1; /**< sequential write range */
+                        uint32_t wp             : 1; /**< write prepare */
+                        uint32_t reserved1      : 13;
+
+                        uint32_t access_size    : 8; /**< command access size */
+                } bits;
+
+                uint32_t raw;
+        } attributes;
+
+        uint32_t length;
+        uint64_t starting_lba;
+};
 SPDK_STATIC_ASSERT(sizeof(struct nvme_dsm_range) == 16, "Incorrect size");
 
 /**
@@ -514,12 +530,12 @@ enum nvme_command_specific_status_code {
 	NVME_SC_ABORT_COMMAND_LIMIT_EXCEEDED	= 0x03,
 	/* 0x04 - reserved */
 	NVME_SC_ASYNC_EVENT_REQUEST_LIMIT_EXCEEDED = 0x05,
-	NVME_SC_INVALID_FIRMWARE_SLOT		= 0x06,
-	NVME_SC_INVALID_FIRMWARE_IMAGE		= 0x07,
-	NVME_SC_INVALID_INTERRUPT_VECTOR	= 0x08,
-	NVME_SC_INVALID_LOG_PAGE		= 0x09,
-	NVME_SC_INVALID_FORMAT			= 0x0a,
-	NVME_SC_FIRMWARE_REQUIRES_RESET		= 0x0b,
+	NVME_SC_INVALID_FIRMWARE_SLOT		   = 0x06,
+	NVME_SC_INVALID_FIRMWARE_IMAGE		   = 0x07,
+	NVME_SC_INVALID_INTERRUPT_VECTOR	   = 0x08,
+	NVME_SC_INVALID_LOG_PAGE		   = 0x09,
+	NVME_SC_INVALID_FORMAT			   = 0x0a,
+	NVME_SC_FIRMWARE_REQUIRES_RESET		   = 0x0b,
 	NVME_SC_INVALID_QUEUE_DELETION             = 0x0c,
 	NVME_SC_FEATURE_ID_NOT_SAVEABLE            = 0x0d,
 	NVME_SC_FEATURE_NOT_CHANGEABLE             = 0x0e,
@@ -538,9 +554,9 @@ enum nvme_command_specific_status_code {
 	NVME_SC_THINPROVISIONING_NOT_SUPPORTED     = 0x1b,
 	NVME_SC_CONTROLLER_LIST_INVALID            = 0x1c,
 
-	NVME_SC_CONFLICTING_ATTRIBUTES		= 0x80,
-	NVME_SC_INVALID_PROTECTION_INFO		= 0x81,
-	NVME_SC_ATTEMPTED_WRITE_TO_RO_PAGE	= 0x82,
+	NVME_SC_CONFLICTING_ATTRIBUTES		   = 0x80,
+	NVME_SC_INVALID_PROTECTION_INFO		   = 0x81,
+	NVME_SC_ATTEMPTED_WRITE_TO_RO_PAGE	   = 0x82,
 };
 
 /**
@@ -634,7 +650,7 @@ enum nvme_data_transfer {
  */
 static inline enum nvme_data_transfer nvme_opc_get_data_transfer(uint8_t opc)
 {
-	return opc & 3;
+  return (enum nvme_data_transfer) (opc & 3);
 }
 
 enum nvme_feature {
@@ -1564,7 +1580,7 @@ SPDK_STATIC_ASSERT(sizeof(struct nvme_fw_commit) == 4, "Incorrect size");
 
 #ifndef FREEBSD_NATIVE
 #ifdef __cplusplus
-extern "C" {
+}
 #endif
 #endif /* !FBSD_NATIVE */
 
